@@ -24,7 +24,7 @@ export default function AIConfigPanel({ isOpen, onClose }: AIConfigPanelProps) {
     openai: {
       name: 'OpenAI GPT-4 Vision',
       description: 'Advanced vision and text analysis for construction documents',
-      models: ['gpt-4-vision-preview', 'gpt-4-turbo', 'gpt-4'],
+      models: ['gpt-4o', 'gpt-4-turbo', 'gpt-4'],
       strengths: ['Excellent image analysis', 'Detailed cost breakdowns', 'High accuracy'],
       apiKeyEnv: 'VITE_OPENAI_API_KEY'
     },
@@ -173,7 +173,7 @@ export default function AIConfigPanel({ isOpen, onClose }: AIConfigPanelProps) {
                 <pre className="mt-2 p-2 bg-gray-800 text-green-400 rounded text-xs overflow-x-auto">
 {`# Choose your preferred AI provider
 VITE_AI_PROVIDER=openai
-VITE_AI_MODEL=gpt-4-vision-preview
+VITE_AI_MODEL=gpt-4o
 
 # Add your API keys (you only need one)
 VITE_OPENAI_API_KEY=your_openai_api_key

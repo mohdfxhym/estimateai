@@ -39,7 +39,7 @@ export async function processProjectFiles(projectId: string): Promise<Processing
     // Get AI configuration
     const aiConfig: AIConfig = {
       provider: (import.meta.env.VITE_AI_PROVIDER as any) || 'openai',
-      model: import.meta.env.VITE_AI_MODEL || 'gpt-4-vision-preview',
+      model: import.meta.env.VITE_AI_MODEL || 'gpt-4o',
       apiKey: import.meta.env.VITE_OPENAI_API_KEY || 
                import.meta.env.VITE_ANTHROPIC_API_KEY || 
                import.meta.env.VITE_GOOGLE_AI_API_KEY || ''

@@ -70,7 +70,7 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # AI Service Configuration (Choose one or more)
 VITE_AI_PROVIDER=openai
-VITE_AI_MODEL=gpt-4-vision-preview
+VITE_AI_MODEL=gpt-4o
 
 # AI API Keys (You only need one)
 VITE_OPENAI_API_KEY=your_openai_api_key
@@ -157,7 +157,7 @@ EstimateAI supports 25+ countries with automatic:
 
 ### AI Models
 
-- **OpenAI**: `gpt-4-vision-preview`, `gpt-4-turbo`, `gpt-4`
+- **OpenAI**: `gpt-4o`, `gpt-4-turbo`, `gpt-4`
 - **Google**: `gemini-pro-vision`, `gemini-pro`
 - **Anthropic**: `claude-3-sonnet-20240229`, `claude-3-opus-20240229`
 
