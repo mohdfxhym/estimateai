@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, MessageCircle, X, Minimize2, Maximize2 } from 'lucide-react';
 import { aiProviderService } from '../services/aiProviders';
+import { localizationService } from '../utils/localization';
 
 interface Message {
   id: string;
@@ -46,11 +47,14 @@ export default function AIChatBot({ estimationData, projectName, projectType }: 
 
   useEffect(() => {
     if (isOpen && !isMinimized && messages.length === 0) {
+      const currentCountry = localizationService.getCurrentCountry();
+      const formattedCost = localizationService.formatCurrency(estimationData.totalCost);
+      
       // Add welcome message
       const welcomeMessage: Message = {
         id: Date.now().toString(),
         type: 'bot',
-        content: `Hello! I'm your AI construction advisor. I've analyzed your ${projectType || 'construction'} project "${projectName || 'estimation'}" with a total cost of ${formatCurrency(estimationData.totalCost)}. 
+        content: `Hello! I'm your AI construction advisor. I've analyzed your ${projectType || 'construction'} project "${projectName || 'estimation'}" with a total cost of ${formattedCost} (${currentCountry.currency}). 
 
 I can help you with:
 • Cost optimization suggestions
@@ -67,15 +71,10 @@ What would you like to know about your project?`,
     }
   }, [isOpen, isMinimized, messages.length, estimationData, projectName, projectType]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const generateContextPrompt = () => {
+    const currentCountry = localizationService.getCurrentCountry();
+    const formattedCost = localizationService.formatCurrency(estimationData.totalCost);
+    
     const categoryTotals = estimationData.items.reduce((acc, item) => {
       acc[item.category] = (acc[item.category] || 0) + item.amount;
       return acc;
@@ -84,21 +83,30 @@ What would you like to know about your project?`,
     return `You are an expert construction advisor and cost consultant. You are helping with a ${projectType || 'construction'} project called "${projectName || 'Construction Project'}".
 
 PROJECT DETAILS:
-- Total Estimated Cost: ${formatCurrency(estimationData.totalCost)}
+- Total Estimated Cost: ${formattedCost} (${currentCountry.currency})
+- Localized for: ${currentCountry.name}
+- Currency: ${currentCountry.currency}
+- Measurement System: ${currentCountry.measurementSystem}
 - Accuracy: ${estimationData.accuracy}%
 - Number of Line Items: ${estimationData.items.length}
 
 COST BREAKDOWN BY CATEGORY:
 ${Object.entries(categoryTotals).map(([category, amount]) => 
-  `- ${category}: ${formatCurrency(amount)} (${((amount / estimationData.totalCost) * 100).toFixed(1)}%)`
+  `- ${category}: ${localizationService.formatCurrency(amount)} (${((amount / estimationData.totalCost) * 100).toFixed(1)}%)`
 ).join('\n')}
 
 DETAILED LINE ITEMS:
 ${estimationData.items.map(item => 
-  `- ${item.description}: ${item.quantity} ${item.unit} @ ${formatCurrency(item.rate)} = ${formatCurrency(item.amount)}`
+  `- ${item.description}: ${localizationService.formatNumber(item.quantity)} ${item.unit} @ ${localizationService.formatCurrency(item.rate)} = ${localizationService.formatCurrency(item.amount)}`
 ).join('\n')}
 
-Provide helpful, actionable advice based on this specific project data. Be concise but thorough. Focus on practical suggestions that can help optimize costs, improve quality, or mitigate risks. Use the actual numbers and categories from this project in your responses.`;
+REGIONAL CONTEXT:
+- Market: ${currentCountry.name}
+- Currency: ${currentCountry.currency}
+- Units: ${currentCountry.measurementSystem}
+- Regional cost factors have been applied
+
+Provide helpful, actionable advice based on this specific project data. Be concise but thorough. Focus on practical suggestions that can help optimize costs, improve quality, or mitigate risks. Use the actual numbers and categories from this project in your responses. Always reference costs in ${currentCountry.currency} and use ${currentCountry.measurementSystem} units.`;
   };
 
   const sendMessage = async () => {
@@ -135,7 +143,7 @@ Provide helpful, actionable advice based on this specific project data. Be conci
 
         const config = {
           provider: (import.meta.env.VITE_AI_PROVIDER as any) || availableProviders[0],
-          model: import.meta.env.VITE_AI_MODEL || 'gpt-4',
+          model: import.meta.env.VITE_AI_MODEL || 'gpt-4o',
           apiKey: import.meta.env.VITE_OPENAI_API_KEY || 
                    import.meta.env.VITE_ANTHROPIC_API_KEY || 
                    import.meta.env.VITE_GOOGLE_AI_API_KEY || ''
@@ -171,17 +179,19 @@ Provide helpful, actionable advice based on this specific project data. Be conci
 
   const generateFallbackResponse = (question: string): string => {
     const lowerQuestion = question.toLowerCase();
+    const currentCountry = localizationService.getCurrentCountry();
+    const formattedCost = localizationService.formatCurrency(estimationData.totalCost);
     
     if (lowerQuestion.includes('cost') || lowerQuestion.includes('expensive') || lowerQuestion.includes('budget')) {
       const highestCategory = estimationData.items.reduce((prev, current) => 
         prev.amount > current.amount ? prev : current
       );
-      return `Based on your project estimate of ${formatCurrency(estimationData.totalCost)}, here are some cost optimization suggestions:
+      return `Based on your project estimate of ${formattedCost} (${currentCountry.currency}), here are some cost optimization suggestions:
 
-• Your highest cost item is "${highestCategory.description}" at ${formatCurrency(highestCategory.amount)}
+• Your highest cost item is "${highestCategory.description}" at ${localizationService.formatCurrency(highestCategory.amount)}
 • Consider bulk purchasing for materials to get 5-10% discounts
 • Review specifications for potential value engineering opportunities
-• Get multiple quotes from suppliers and contractors
+• Get multiple quotes from suppliers and contractors in ${currentCountry.name}
 • Consider phased construction to spread costs over time
 
 The current estimate shows good accuracy at ${estimationData.accuracy}%. I recommend adding a 10-15% contingency for unexpected costs.`;
@@ -191,11 +201,11 @@ The current estimate shows good accuracy at ${estimationData.accuracy}%. I recom
       return `For material optimization in your ${projectType || 'construction'} project:
 
 • Consider alternative materials that meet the same performance standards
-• Look into sustainable options that may qualify for tax incentives
+• Look into sustainable options that may qualify for tax incentives in ${currentCountry.name}
 • Evaluate local vs. imported materials for cost and timeline benefits
 • Review material specifications for potential over-engineering
 
-Your current material costs represent a significant portion of the ${formatCurrency(estimationData.totalCost)} total. I can help you analyze specific categories if you'd like to focus on particular areas.`;
+Your current material costs represent a significant portion of the ${formattedCost} total. I can help you analyze specific categories if you'd like to focus on particular areas.`;
     }
 
     if (lowerQuestion.includes('time') || lowerQuestion.includes('schedule') || lowerQuestion.includes('duration')) {
@@ -204,31 +214,33 @@ Your current material costs represent a significant portion of the ${formatCurre
 • Your project has ${estimationData.items.length} major line items to coordinate
 • Consider parallel work streams where possible
 • Plan for material delivery schedules to avoid delays
-• Factor in weather conditions and seasonal variations
+• Factor in weather conditions and seasonal variations in ${currentCountry.name}
 • Build in buffer time for inspections and approvals
 
 Based on the project scope, I estimate 8-12 months for completion, depending on complexity and local conditions.`;
     }
 
     if (lowerQuestion.includes('risk') || lowerQuestion.includes('problem') || lowerQuestion.includes('issue')) {
-      return `Key risks to consider for your project:
+      return `Key risks to consider for your project in ${currentCountry.name}:
 
 • Market volatility: Material costs can fluctuate ±10-15%
 • Weather delays: Plan for seasonal impacts
 • Permit delays: Start applications early
 • Labor availability: Secure skilled contractors in advance
 • Supply chain: Order long-lead items early
+• Currency fluctuation: Monitor ${currentCountry.currency} exchange rates for imported materials
 
 Your ${estimationData.accuracy}% accuracy estimate is good, but I recommend a 10-15% contingency fund for unforeseen issues.`;
     }
 
     // General response
-    return `Thank you for your question about the ${projectType || 'construction'} project. Based on your estimate of ${formatCurrency(estimationData.totalCost)} with ${estimationData.items.length} line items:
+    return `Thank you for your question about the ${projectType || 'construction'} project. Based on your estimate of ${formattedCost} (${currentCountry.currency}) with ${estimationData.items.length} line items:
 
 • The project shows ${estimationData.accuracy}% confidence in the estimates
 • Consider reviewing the highest cost categories for optimization opportunities
 • Plan for proper project management and quality control
 • Ensure all permits and approvals are in place before starting
+• Factor in ${currentCountry.name} specific regulations and standards
 
 Could you be more specific about what aspect you'd like me to focus on? I can help with costs, materials, timeline, or risk management.`;
   };

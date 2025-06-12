@@ -2,6 +2,7 @@ import React from 'react';
 import { TrendingUp, FileText, DollarSign, Clock, BarChart3, PieChart, Plus } from 'lucide-react';
 import { useProjects } from '../hooks/useProjects';
 import { useAuth } from '../hooks/useAuth';
+import { localizationService } from '../utils/localization';
 
 interface DashboardProps {
   onNewProject: () => void;
@@ -10,6 +11,10 @@ interface DashboardProps {
 export default function Dashboard({ onNewProject }: DashboardProps) {
   const { projects, loading } = useProjects();
   const { user } = useAuth();
+
+  const formatCurrency = (amount: number) => {
+    return localizationService.formatCurrency(amount);
+  };
 
   if (loading) {
     return (
@@ -43,7 +48,7 @@ export default function Dashboard({ onNewProject }: DashboardProps) {
     },
     { 
       title: 'Total Estimates', 
-      value: `$${(totalEstimatedValue / 1000000).toFixed(1)}M`, 
+      value: formatCurrency(totalEstimatedValue), 
       change: '+8%', 
       icon: DollarSign, 
       color: 'green' 
@@ -70,9 +75,11 @@ export default function Dashboard({ onNewProject }: DashboardProps) {
             project.status === 'processing' ? 'Processing' : 
             project.status === 'review' ? 'Review' : 'Draft',
     date: new Date(project.created_at).toLocaleDateString(),
-    cost: project.total_cost ? `$${project.total_cost.toLocaleString()}` : 'Pending',
+    cost: project.total_cost ? formatCurrency(project.total_cost) : 'Pending',
     accuracy: project.accuracy ? `${project.accuracy}%` : 'N/A',
   }));
+
+  const currentCountry = localizationService.getCurrentCountry();
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -81,7 +88,12 @@ export default function Dashboard({ onNewProject }: DashboardProps) {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Welcome back, {user?.email?.split('@')[0] || 'User'}
           </h2>
-          <p className="text-gray-600">Here's what's happening with your estimation projects today.</p>
+          <p className="text-gray-600">
+            Here's what's happening with your estimation projects today. 
+            <span className="ml-2 text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+              {currentCountry.name} • {currentCountry.currency}
+            </span>
+          </p>
         </div>
         <button
           onClick={onNewProject}
@@ -226,6 +238,19 @@ export default function Dashboard({ onNewProject }: DashboardProps) {
                 <span className="text-sm text-gray-600">3 Months Ago</span>
                 <span className="text-sm font-medium text-gray-900">+5%</span>
               </div>
+            </div>
+          </div>
+
+          {/* Currency Info */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center space-x-2 mb-2">
+              <div className="text-lg">{currentCountry.code === 'US' ? '🇺🇸' : '🌍'}</div>
+              <h4 className="font-medium text-blue-900">Regional Settings</h4>
+            </div>
+            <div className="text-sm text-blue-700 space-y-1">
+              <p>Currency: {currentCountry.currency}</p>
+              <p>Units: {currentCountry.measurementSystem}</p>
+              <p>Market: {currentCountry.name}</p>
             </div>
           </div>
         </div>

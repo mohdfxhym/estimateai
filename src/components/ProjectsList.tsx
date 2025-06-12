@@ -3,6 +3,7 @@ import { Search, Filter, Plus, Eye, Edit, Trash2, Calendar, DollarSign, Clock, F
 import { useProjects } from '../hooks/useProjects';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
+import { localizationService } from '../utils/localization';
 
 interface ProjectsListProps {
   onNewProject: () => void;
@@ -20,19 +21,11 @@ export default function ProjectsList({ onNewProject, onViewProject }: ProjectsLi
 
   const formatCurrency = (amount: number | null) => {
     if (!amount) return 'Pending';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(amount);
+    return localizationService.formatCurrency(amount);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return localizationService.formatDate(new Date(dateString));
   };
 
   const getStatusColor = (status: string) => {
@@ -182,6 +175,8 @@ export default function ProjectsList({ onNewProject, onViewProject }: ProjectsLi
     };
   };
 
+  const currentCountry = localizationService.getCurrentCountry();
+
   if (loading) {
     return (
       <div className="p-6 max-w-7xl mx-auto">
@@ -203,7 +198,12 @@ export default function ProjectsList({ onNewProject, onViewProject }: ProjectsLi
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Projects</h2>
-          <p className="text-gray-600">Manage and track all your estimation projects</p>
+          <p className="text-gray-600">
+            Manage and track all your estimation projects
+            <span className="ml-2 text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+              {currentCountry.name} • {currentCountry.currency}
+            </span>
+          </p>
         </div>
         <button
           onClick={onNewProject}
@@ -353,7 +353,7 @@ export default function ProjectsList({ onNewProject, onViewProject }: ProjectsLi
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cost
+                    Cost ({currentCountry.currency})
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Accuracy
